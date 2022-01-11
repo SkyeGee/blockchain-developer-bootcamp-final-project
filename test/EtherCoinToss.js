@@ -1,8 +1,16 @@
 const { expect } = require("chai");
-// const { ethers } = require("hardhat");
+const { ethers } = require("hardhat");
 
-describe("EtherCoinToss", function () {
-   it("Should return the new greeting once it's changed", async function () {
+describe("EtherCoinToss", () => {
+   describe ("getRandomNumber", () => {
+      it("Should return ", async function () {
+
+         describe("functionName", () => {
+               it("should return when given", async () => {
+                   // ...
+           })
+         })
+       })
 //     const Greeter = await ethers.getContractFactory("Greeter");
 //     const greeter = await Greeter.deploy("Hello, world!");
 //     await greeter.deployed();
