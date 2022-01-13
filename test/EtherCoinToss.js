@@ -66,7 +66,7 @@ describe("Deployment", function () {
       const data = receipt.logs[0].data;
       const topics = receipt.logs[0].topics;
       const event = interface.decodeEventLog("EtherCoinTossed", data, topics);
-      expect(event.theCoinTossID).to.equal(300);?
+      expect(event.theCoinTossID).to.equal(300);
      //const player1Balance = await hardhatEtherCoinToss.balanceOf(player1.address);
      // expect(player1Balance).to.equal(1);
 // // Transfer 50 tokens from addr1 to addr2
