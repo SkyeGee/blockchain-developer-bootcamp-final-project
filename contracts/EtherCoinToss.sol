@@ -49,15 +49,22 @@ contract EtherCoinToss is VRFConsumerBase {
 
     uint256 numCoinToss = 300; // Number of coin tosses - this becomes the ID of the game
     mapping(uint256 => EtherCoinTossStruct) EtherCoinTossStructs; // Mapping to store all the coin toss games
+    mapping(uint256 => bool) finishedGames;
 
+    modifier numCoinTossNew(uint256 number) {
+        require(finishedGames[number], "Game already finished");
+        _;
+    }
     event EtherCoinTossed(uint256 indexed theCoinTossID); // Event to 
+    event EtherCoinFinishedToss(address indexed winner); // Create the event for player 2 to find out who the winner is
     // Events are similar to functions but they are not payable and do not return a value
 
     // Start the Ether coin toss
     function newCoinToss() public payable returns (uint256 coinTossID) {
         address theBetStarter = msg.sender; // Converting the sender to a payable address
         address payable player1 = payable(theBetStarter);
-
+        EtherCoinTossStruct memory c = EtherCoinTossStructs[coinTossID]; // Store the coin toss game in memory
+        c.betStarter = player1;
         coinTossID = numCoinToss++; // Increase number of coin tosses by 1 every time a game is started
 
         EtherCoinTossStructs[coinTossID] = EtherCoinTossStruct( // Create a new coin toss game identified by coinTossID
@@ -73,10 +80,10 @@ contract EtherCoinToss is VRFConsumerBase {
         emit EtherCoinTossed(coinTossID); // Emit the event to tell the player the coinTossID
     }
 
-    event EtherCoinFinishedToss(address indexed winner); // Create the event for player 2 to find out who the winner is
+    
 
     // End the Ether coin toss
-    function endCoinToss(uint256 coinTossID) public payable {
+    function endCoinToss(uint256 coinTossID) public numCoinTossNew(coinTossID) payable {
         EtherCoinTossStruct memory c = EtherCoinTossStructs[coinTossID]; // Store the coin toss game in memory
 
         address theBetender = msg.sender; // Converting player 2 to payable address again
@@ -101,6 +108,7 @@ contract EtherCoinToss is VRFConsumerBase {
         }
 
         c.winner.transfer(c.etherTotal);
+        finishedGames[coinTossID] = true;
         emit EtherCoinFinishedToss(c.winner); // Emit the event to tell player 2 the winner
     }
 }
