@@ -1,6 +1,6 @@
 const { expect } = require("chai");
-const { ethers } = require('hardhat')
-describe('EtherCoinToss', function () {
+const { ethers } = require("hardhat");
+describe("EtherCoinToss", function () {
   // Mocha has four functions that let you hook into the the test runner's
   // lifecyle. These are: `before`, `beforeEach`, `after`, `afterEach`.
 
@@ -14,17 +14,16 @@ describe('EtherCoinToss', function () {
   let hardhatEtherCoinToss;
   let player1;
   let player2;
-  let player1Balance = 50
-  let player2Balance = 40
-  let amountOfMoney = 1
 
+  let amountOfMoney = 1;
+  // EtherCoinTossStruct memory c = EtherCoinTossStructs[coinTossID]; // Store the coin toss game in memory
 
   // `beforeEach` will run before each test, re-deploying the contract every
   // time. It receives a callback, which can be async.
   beforeEach(async function () {
     // Get the ContractFactory and Signers here.
-    [player1, player2] = await ethers.getSigners()
-    const EtherCoinToss = await ethers.getContractFactory('EtherCoinToss')
+    [player1, player2] = await ethers.getSigners();
+    EtherCoinToss = await ethers.getContractFactory("EtherCoinToss");
     // To deploy our contract, we just have to call Token.deploy() and await
     // for it to be deployed(), which happens once its transaction has been
     // mined.
@@ -36,66 +35,122 @@ describe('EtherCoinToss', function () {
     // tests. It receives the test name, and a callback function.
     it("deploys successfully", async () => {
       const address = hardhatEtherCoinToss.address;
-      expect(address).to.not.equal(0x0)
-      expect(address).to.not.equal('')
-      expect(address).to.not.equal(null)
-      expect(address).to.not.equal(undefined)
-
+      expect(address).to.not.equal(0x0);
+      expect(address).to.not.equal("");
+      expect(address).to.not.equal(null);
+      expect(address).to.not.equal(undefined);
     });
-    // If the callback function is async, Mocha will `await` it.
-    //  it("Should set the initial values", async function () {
-    //    // Expect receives a value, and wraps it in an Assertion object. These
-    //    // objects have a lot of utility methods to assert values.
-
-    //    // This test expects the owner variable stored in the contract to be equal
-    //    // to our Signer's owner.
-    //    expect(await hardhatEtherCoinToss.keyHash).to.equal(0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311);
-    //    expect(await hardhatEtherCoinToss.fee).to.equal(0.1 * 10**18);
-    //  });
-    // If the callback function is async, Mocha will `await` it.
-
-    // it("Should assign the total supply of ether to the player", async function () {
-    //   const ownerBalance = await hardhatToken.balanceOf(owner.address);
-    //   expect(await hardhatToken.totalSupply()).to.equal(ownerBalance);
-    // });
   });
 
   describe("Events", function () {
     it("Should emit event if coin toss is started", async function () {
-      const tx = await hardhatEtherCoinToss.newCoinToss();
+      const tx = await hardhatEtherCoinToss.newCoinToss({
+        value: amountOfMoney,
+      });
       const receipt = await ethers.provider.getTransactionReceipt(tx.hash);
-      const interface = new ethers.utils.Interface(["event EtherCoinTossed(uint256 indexed theCoinTossID)"]);
+      const interface = new ethers.utils.Interface([
+        "event EtherCoinTossed(uint256 indexed theCoinTossID)",
+      ]);
       const data = receipt.logs[0].data;
       const topics = receipt.logs[0].topics;
       const event = interface.decodeEventLog("EtherCoinTossed", data, topics);
       expect(event.theCoinTossID).to.equal(300);
-
-
-
-
     });
 
+
+    it("Should fail if player does not have enough tokens", async function () {
+      const player1Balance = await ethers.provider.getBalance(player1.address);
+      await hardhatEtherCoinToss
+        .newCoinToss({
+          value: player1Balance + 1,
+        })
+        .catch((error) => {
+          expect(error.message).to.equal(
+            `sender doesn't have enough funds to send tx. The max upfront cost is: ${
+              player1Balance + 1
+            } and the sender's account only has: ${player1Balance}'`
+          );
+          // expect(error.message).to.equal(
+          //   `sender doesn't have enough funds to send tx. The max upfront cost is: 99999987529598395357667 and the sender's account only has: ${player1Balance}'`
+          // );
+        });
+    });
   });
   describe("Events", function () {
-    it("Should emit event if coin toss is finished", async function () {
+    xit("Should emit event if coin toss is finished", async function () {
+      const _player1Balance = await ethers.provider.getBalance(player1.address);
+      const _player2Balance = await ethers.provider.getBalance(player2.address);
       const tx = await hardhatEtherCoinToss.endCoinToss(300);
-      console.log(tx);
+
       const receipt = await ethers.provider.getTransactionReceipt(tx.hash);
-      const interface = new ethers.utils.Interface(["event EtherCoinFinishedToss(address indexed winner)"]);
+      const interface = new ethers.utils.Interface([
+        "event EtherCoinFinishedToss(address indexed winner)",
+      ]);
       const data = receipt.logs[0].data;
       const topics = receipt.logs[0].topics;
-      const event = interface.decodeEventLog("endCoinToss", data, topics);
-      expect(event.c.winner).to.equal(winner);
+      const event = interface.decodeEventLog(
+        "EtherCoinFinishedToss",
+        data,
+        topics
+      );
+      expect(event.c.winner).to.equal(player1.address || player2.address);
 
-      //const player1Balance = await hardhatEtherCoinToss.balanceOf(player1.address);
-      // expect(player1Balance).to.equal(1);
-      // // Transfer 50 tokens from addr1 to addr2
-      //       // We use .connect(signer) to send a transaction from another account
-      //       await hardhatToken.connect(addr1).transfer(addr2.address, 50);
-      //       const addr2Balance = await hardhatToken.balanceOf(addr2.address);
-      //       expect(addr2Balance).to.equal(50);
+      const finalPlayer1Balance = await ethers.provider.getBalance(
+        player1.address
+      );
+
+      const finalPlayer2Balance = await ethers.provider.getBalance(
+        player2.address
+      );
+
+      if (event.c.winner === player1.address) {
+        expect(finalPlayer1Balance).to.not.equal(_player1Balance);
+        expect(finalPlayer2Balance).to.equal(_player2Balance);
+      }
+      if (event.c.winner === player2.address) {
+        expect(finalPlayer2Balance).to.not.equal(_player2Balance);
+        expect(finalPlayer1Balance).to.equal(_player1Balance);
+      }
     });
-    it("Should not start if game is already finished", async function () {
+
+    it("Should not start if game doesn't exist", async function () {
+      await hardhatEtherCoinToss.endCoinToss(301).catch((error) => {
+        expect(error.message).to.equal(
+          "VM Exception while processing transaction: reverted with reason string 'Game doesn't exist'"
+        );
+      });
+    });
+
+    it("Should not start if  value entered by second player is not the same as enterd by first player", async function () {
+      await hardhatEtherCoinToss
+        .endCoinToss(300, { value: amountOfMoney })
+        .catch((error) => {
+          expect(error.message).to.equal(
+            "VM Exception while processing transaction: reverted with reason string 'value needs to be the same as starting Wager'"
+          );
+        });
+    });
+    xit("Should not start if player2 equals player1", async function () {
+      player1 = player2;
+      await hardhatEtherCoinToss.endCoinToss(300).catch((error) => {
+        expect(error.message).to.equal(
+          "VM Exception while processing transaction: reverted with reason string 'You cannot play against yourself'"
+        );
+      });
+    });
+    xit("Should not start if game is already finished", async function () {
+      hardhatEtherCoinToss.EtherCoinTossStructs[300] =
+        // Create a new coin toss game identified by coinTossID
+        {
+          ID: 300,
+          betStarter: player1,
+          startingWager: 3000,
+          betEnder: player1,
+          endingWager: 3000,
+          etherTotal: 0,
+          winner: player1,
+          loser: player1,
+        };
       await hardhatEtherCoinToss.endCoinToss(300).catch((error) => {
         expect(error.message).to.equal(
           "Returned error: VM Exception while processing transaction: revert Game already finished -- Reason given: Game already finished."
@@ -103,43 +158,41 @@ describe('EtherCoinToss', function () {
       });
     });
 
-    it("Should fail if player doesn’t have enough tokens", async function () {
-      const initialPlayer1Balance = (player1.address);
-
-      // Try to send 1 token from player1 (0 tokens) to player2 (1000000 tokens).
-      // `require` will evaluate false and revert the transaction.
-      await expect(
-        hardhatEtherCoinToss.connect(player1).transfer(player2.address, 1)
-      ).to.be.revertedWith("Not enough tokens");
-
-      // Player1 balance shouldn't have changed.
-      expect(player1Balance).to.equal(
-        initialPlayer1Balance
-      );
-    });
-
-    it("Should update balances after transfers", async function () {
+    xit("Should update balances after transfers", async function () {
       //const initialPlayer1Balance = await hardhatEtherCoinToss.balanceOf(player1.address);
 
-      const balancePlayer1 = player1.balance;
+      const _player1Balance = await ethers.provider.getBalance(player1.address);
+      await hardhatEtherCoinToss.newCoinToss({ value: 1 });
 
-      //run function where money is transfered
+      const _player2Balance = await ethers.provider.getBalance(player2.address);
+      await hardhatEtherCoinToss.endCoinToss(301, { value: 1 });
+      const receipt = await ethers.provider.getTransactionReceipt(tx.hash);
+      const interface = new ethers.utils.Interface([
+        "event EtherCoinFinishedToss(address indexed winner)",
+      ]);
+      const data = receipt.logs[0].data;
+      const topics = receipt.logs[0].topics;
+      const event = interface.decodeEventLog(
+        "EtherCoinFinishedToss",
+        data,
+        topics
+      );
 
-      expect(player1Balance).to.equal(balancePlayer1 + amountOfMoney)
-      // Transfer 1 ether from player1 to player2.
-      await hardhatEtherCoinToss.transfer(player2.address, 1);
-      // Transfer another 0.5 ether from player1 to player2.
-      await hardhatEtherCoinToss.transfer(player2.address, 0.5);
+      const finalPlayer1Balance = await ethers.provider.getBalance(
+        player1.address
+      );
+      const finalPlayer2Balance = await ethers.provider.getBalance(
+        player2.address
+      );
 
-      // Check balances.
-      const finalPlayer1Balance = await hardhatEtherCoinToss(player1.Balance);
-      expect(finalPlayer1Balance).to.equal(player1Balance.sub(1.5));
-
-      const player2Balance = await hardhatEtherCoinToss(player2.add);
-      expect(player2Balance).to.equal(41);
-
-      // const addr2Balance = await hardhatToken.balanceOf(addr2.address);
-      // expect(addr2Balance).to.equal(50);
+      if (event.c.winner === player1.address) {
+        expect(finalPlayer1Balance).to.not.equal(_player1Balance);
+        expect(finalPlayer2Balance).to.equal(_player2Balance);
+      }
+      if (event.c.winner === player2.address) {
+        expect(finalPlayer2Balance).to.not.equal(_player2Balance);
+        expect(finalPlayer1Balance).to.equal(_player1Balance);
+      }
     });
   });
 });
