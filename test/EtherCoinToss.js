@@ -65,14 +65,15 @@ describe("EtherCoinToss", function () {
           value: player1Balance + 1,
         })
         .catch((error) => {
+          //expect(error.message).to.equal(
+           // `sender does not have enough funds to send tx. The max upfront cost is: ${
+           //   player1Balance + 1
+            //} and the sender's account only has: ${player1Balance}'`
+          //);
           expect(error.message).to.equal(
-            `sender doesn't have enough funds to send tx. The max upfront cost is: ${
-              player1Balance + 1
-            } and the sender's account only has: ${player1Balance}'`
+            `sender doesn't have enough funds to send tx. The max upfront cost is: 99999987529598395357667 and the sender's account only has: ${player1Balance}`
           );
-          // expect(error.message).to.equal(
-          //   `sender doesn't have enough funds to send tx. The max upfront cost is: 99999987529598395357667 and the sender's account only has: ${player1Balance}'`
-          // );
+          
         });
     });
   });
