@@ -24,10 +24,11 @@ require('dotenv').config();
   },
   networks: {
   hardhat: {
+      chaidId: 1337, 
   },
-  rinkeby: {
-  url: "https://rinkeby.infura.io/v3/7a84dee163af4c6091bdf7a8dc255fb9",
-  accounts: [`0x${process.env.REACT_APP_PRIVATE_KEY}`]
-  }
+  // rinkeby: {
+  //url: "https://rinkeby.infura.io/v3/7a84dee163af4c6091bdf7a8dc255fb9",
+  //accounts: [`0x${process.env.REACT_APP_PRIVATE_KEY}`]
   }
   };
+  
