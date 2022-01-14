@@ -131,4 +131,3 @@ contract EtherCoinToss is VRFConsumerBase {
     }
 }
 
-
