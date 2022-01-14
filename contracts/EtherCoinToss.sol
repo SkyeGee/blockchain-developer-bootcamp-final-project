@@ -16,21 +16,8 @@ contract EtherCoinToss is VRFConsumerBase {
         fee = 0.1 * 10**18;
     }
 
-    function getRandomNumber() public returns (bytes32 requestId) { // Callback function for VRF
-        require(
-            LINK.balanceOf(address(this)) >= fee,
-            "Not enough LINK - fill contract with faucet"
-        );
-        return requestRandomness(keyHash, fee);
-    }
-
-    // Sets the random number 
-    function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override 
-    {
-        randomResult = randomness;
-    }
-
-    struct EtherCoinTossStruct { // Struct for storing the coin toss
+    struct EtherCoinTossStruct {
+        // Struct for storing the coin toss
         uint256 ID;
         address payable betStarter;
         uint256 startingWager;
@@ -46,25 +33,38 @@ contract EtherCoinToss is VRFConsumerBase {
     uint256 internal fee;
     uint256 public randomResult;
 
-
     uint256 numCoinToss = 300; // Number of coin tosses - this becomes the ID of the game
     mapping(uint256 => EtherCoinTossStruct) EtherCoinTossStructs; // Mapping to store all the coin toss games
     mapping(uint256 => bool) finishedGames;
 
     modifier numCoinTossNew(uint256 number) {
-        require(finishedGames[number], "Game already finished");
+        require(!finishedGames[number], "Game already finished");
         _;
     }
-    event EtherCoinTossed(uint256 indexed theCoinTossID); // Event to 
+
+    modifier numCoinTossOutOfRange(uint256 number) {
+        require(numCoinToss >= number, "Game doesn't exist");
+        _;
+    }
+
+    modifier differentPlayer(EtherCoinTossStruct memory game) {
+        require(
+            game.betStarter != msg.sender,
+            "You cannot play against yourself"
+        );
+        _;
+    }
+
+    event EtherCoinTossed(uint256 indexed theCoinTossID); // Event to
     event EtherCoinFinishedToss(address indexed winner); // Create the event for player 2 to find out who the winner is
+
     // Events are similar to functions but they are not payable and do not return a value
 
     // Start the Ether coin toss
     function newCoinToss() public payable returns (uint256 coinTossID) {
         address theBetStarter = msg.sender; // Converting the sender to a payable address
         address payable player1 = payable(theBetStarter);
-        EtherCoinTossStruct memory c = EtherCoinTossStructs[coinTossID]; // Store the coin toss game in memory
-        c.betStarter = player1;
+
         coinTossID = numCoinToss++; // Increase number of coin tosses by 1 every time a game is started
 
         EtherCoinTossStructs[coinTossID] = EtherCoinTossStruct( // Create a new coin toss game identified by coinTossID
@@ -80,35 +80,55 @@ contract EtherCoinToss is VRFConsumerBase {
         emit EtherCoinTossed(coinTossID); // Emit the event to tell the player the coinTossID
     }
 
-    
-
     // End the Ether coin toss
-    function endCoinToss(uint256 coinTossID) public numCoinTossNew(coinTossID) payable {
+    function endCoinToss(uint256 coinTossID)
+        public
+        payable
+        numCoinTossOutOfRange(coinTossID)
+        differentPlayer(EtherCoinTossStructs[coinTossID])
+        numCoinTossNew(coinTossID)
+    {
         EtherCoinTossStruct memory c = EtherCoinTossStructs[coinTossID]; // Store the coin toss game in memory
-
         address theBetender = msg.sender; // Converting player 2 to payable address again
         address payable player2 = payable(theBetender);
-
         // Require statements to make sure the coinTossID is valid and player 2 sends an equal amount of Ether
-        require(coinTossID == c.ID);
-        require(msg.value == c.startingWager);
-
+        require(
+            msg.value == c.startingWager,
+            "value needs to be the same as starting Wager"
+        );
+        require(coinTossID == c.ID, "coinTossID is not valid ");
         // Update variables inside the coin toss game
         c.betEnder = player2;
         c.endingWager = msg.value;
         c.etherTotal = c.startingWager + c.endingWager;
-
         fulfillRandomness(getRandomNumber(), coinTossID); // Call the random function and pass in the coinTossID as a parameter
-
-        // Create a simple if else statement to determine the winner and send the Ether winnings
+        // // Create a simple if else statement to determine the winner and send the Ether winnings
         if ((randomResult % 2) == 0) {
             c.winner = c.betStarter;
         } else {
             c.winner = c.betEnder;
         }
-
         c.winner.transfer(c.etherTotal);
         finishedGames[coinTossID] = true;
         emit EtherCoinFinishedToss(c.winner); // Emit the event to tell player 2 the winner
     }
+
+    function getRandomNumber() public returns (bytes32 requestId) {
+        // Callback function for VRF
+        require(
+            LINK.balanceOf(address(this)) >= fee,
+            "Not enough LINK - fill contract with faucet"
+        );
+        return requestRandomness(keyHash, fee);
+    }
+
+    // Sets the random number
+    function fulfillRandomness(bytes32 requestId, uint256 randomness)
+        internal
+        override
+    {
+        randomResult = randomness;
+    }
 }
+
+
