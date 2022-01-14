@@ -3,5 +3,5 @@
 ***// SPDX-License-Identifier: MIT***
 ***pragma solidity ^0.8.0;***
 
-# SWC-131 Presence of Unused variables
-## My contract was checked to ensure that there are no unused variables
+# SWC-100 Proper setting of visibility for functions
+## Functions are specified as being external, public, internal or private to reduce the attack surface of a contract system
