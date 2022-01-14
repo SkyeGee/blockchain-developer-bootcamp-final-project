@@ -1,7 +1,7 @@
 # blockchain-developer-bootcamp-final-project
 ## **Ether Coin Toss**
 ***URL for Deployed Version: [https://skyegee.github.io/blockchain-developer-bootcamp-final-project/***
-***Screen recording link: [_}***
+***Screen recording link: [https://www.loom.com/share/b1f782944f0c41bc87831b01073771cd}***
 
 ### Intoduction and Concept
 This DApp is designed as a fun game between two people where equal amounts of token can be betted for a 50% chance to win the total tokens betted. 
